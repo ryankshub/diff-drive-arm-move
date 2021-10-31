@@ -1,0 +1,7 @@
+<!-- Launch file to open up custom ddrive world -->
+<launch>
+    <!-- Import the empty world from gazebo package -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find diff_drive)/worlds/ddrive.world"/>
+    </include>
+</launch>
