@@ -1,11 +1,11 @@
 # Yaml file describing the dimensions of the madbot stunt bot
 ddrive:
   rect_prism: # Dimensions of the rectangular prism
-    x_len: 0.1524 #in meters (6 inches)
+    x_len: 0.0762 #in meters (3 inches)
     y_len: 0.0762 #in meters (3 inches)
-    z_len: 0.0508 #in meters (2 inches)
+    z_len: 0.0254 #in meters (1 inches)
   wheel: # Dimensions of the wheel
     length: 0.0127 #in meters (.5 inches)
-    radius: 0.0635 #in meters (2.5 inches)
+    radius: 0.0254 #in meters (1 inches)
   caster: # Dimensions of the caster
-    radius: 0.0381 #in meters (1.5 inches)
+    radius: 0.0127 #in meters (.5 inches)

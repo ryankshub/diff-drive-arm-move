@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot>
+
+<!-- Rect Chassis Link -->
+<gazebo reference="rect_box">
+    <material>Gazebo/Grey</material>
+</gazebo>
+
+<!-- Top Caster Link -->
+<gazebo reference="top_caster">
+    <mu1>0</mu1>
+    <mu2>0</mu2>
+    <material>Gazebo/SkyBlue</material>
+</gazebo>
+
+<!-- Bottom Caster Link -->
+<gazebo reference="bottom_caster">
+    <mu1>0</mu1>
+    <mu2>0</mu2>
+    <material>Gazebo/Green</material>
+</gazebo>
+
+<!-- Left wheel Link -->
+<gazebo reference="left_wheel">
+    <mu1>999</mu1>
+    <mu2>999</mu2>
+    <material>Gazebo/RedGlow</material>
+</gazebo>
+
+<!-- Right wheel Link -->
+<gazebo reference="right_wheel">
+    <mu1>999</mu1>
+    <mu2>999</mu2>
+    <material>Gazebo/RedGlow</material>
+</gazebo>
+</robot>

@@ -3,5 +3,8 @@
     <!-- Import the empty world from gazebo package -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find diff_drive)/worlds/ddrive.world"/>
+        <arg name="paused" value="true"/>
     </include>
+    <param name="robot_description" command="xacro $(find diff_drive)/urdf/ddrive.urdf.xacro"/>
+    <node name="spawnner" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model madbot"/>
 </launch>

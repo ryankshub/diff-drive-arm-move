@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <robot name="madbot" xmlns:xacro="https://www.ros.org/wiki/xacro">
     <!-- Get properties from madbot_dim.yaml configuration -->
-    <xacro:property name="madbot_yaml_file" value="$(find ddrive)/config/madbot_dim.yaml"/>
+    <xacro:property name="madbot_yaml_file" value="$(find diff_drive)/config/madbot_dim.yaml"/>
     <xacro:property name="madbot_dims" value="${load_yaml(madbot_yaml_file)}"/>
     <!-- Properties from madbot_dim.yaml -->
-    <xacro:property name="ddrive_dict" value="${madbot_dims['drive']}"/>
+    <xacro:property name="ddrive_dict" value="${madbot_dims['ddrive']}"/>
     <xacro:property name="rect_prism_dict" value="${ddrive_dict['rect_prism']}"/>
     <xacro:property name="rect_length" value="${rect_prism_dict['x_len']}"/>
     <xacro:property name="rect_width" value="${rect_prism_dict['y_len']}"/>
@@ -14,20 +14,22 @@
     <xacro:property name="wheel_length" value="${wheel_dict['length']}"/>
     <xacro:property name="caster_dict" value="${ddrive_dict['caster']}"/>
     <xacro:property name="caster_radius" value="${caster_dict['radius']}"/>
-
+    <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+    <xacro:include filename="$(find diff_drive)/urdf/ddrive.gazebo"/>
+    
     <!-- Links -->
     <link name="rect_box">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box "${rect_length} ${rect_width} ${rect_height}"/>
+                <box size="${rect_length} ${rect_width} ${rect_height}"/>
             </geometry>
         </visual>
 
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box "${rect_length} ${rect_width} ${rect_height}"/>
+                <box size="${rect_length} ${rect_width} ${rect_height}"/>
             </geometry>
         </collision>
 
@@ -99,14 +101,14 @@
 
     <link name="left_wheel">
         <visual>
-            <origin xyz="0 0 0" rpy="{pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
             <geometry>
                 <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
             </geometry>
         </visual>
 
         <collision>
-            <origin xyz="0 0 0" rpy="{pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
             <geometry>
                 <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
             </geometry>
@@ -126,14 +128,14 @@
 
     <link name="right_wheel">
         <visual>
-            <origin xyz="0 0 0" rpy="{pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
             <geometry>
                 <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
             </geometry>
         </visual>
 
         <collision>
-            <origin xyz="0 0 0" rpy="{pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
             <geometry>
                 <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
             </geometry>
@@ -164,17 +166,17 @@
         <origin xyz="${(1.0/3.0)*rect_length} 0 ${-(1.0/2.0)*rect_height}"/>
     </joint>
 
-    <joint name="left_drive" type="continous">
+    <joint name="left_drive" type="continuous">
         <parent link="rect_box"/>
         <child link="left_wheel"/>
-        <origin xyz="${-(1.0/3.0)*rect_length} -(1.0/2.0)*rect_width 0"/>
+        <origin xyz="${-(1.0/3.0)*rect_length} ${-(1.0/2.0)*(rect_width + wheel_length)} 0"/>
         <axis xyz="0 1 0"/>
     </joint>
 
-    <joint name="right_drive" type="continous">
+    <joint name="right_drive" type="continuous">
         <parent link="rect_box"/>
-        <child link="left_wheel"/>
-        <origin xyz="${-(1.0/3.0)*rect_length} (1.0/2.0)*rect_width 0"/>
+        <child link="right_wheel"/>
+        <origin xyz="${-(1.0/3.0)*rect_length} ${(1.0/2.0)*(rect_width + wheel_length)} 0"/>
         <axis xyz="0 1 0"/>
     </joint>
 </robot>
