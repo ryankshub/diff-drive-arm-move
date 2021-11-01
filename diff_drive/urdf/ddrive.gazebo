@@ -1,6 +1,30 @@
 <?xml version="1.0"?>
 <robot>
 
+<!-- Model Plugin for ddrive-->
+<gazebo>
+    <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+        <rosDebugLevel>na</rosDebugLevel>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100</updateRate>
+        <leftJoint>left_drive</leftJoint>
+        <rightJoint>right_drive</rightJoint>
+        <wheelSeparation>${rect_width+wheel_length/2.0}</wheelSeparation>
+        <wheelDiameter>${wheel_radius}</wheelDiameter>
+        <wheelTorque>20</wheelTorque>
+        <commandTopic>diff/cmd_vel</commandTopic>
+        <odometryTopic>diff/odom</odometryTopic>
+        <odometryFrame>odom</odometryFrame>
+        <robotBaseFrame>rect_box</robotBaseFrame>
+        <publishWheelTF>false</publishWheelTF>
+        <publishOdomTF>true</publishOdomTF>
+        <publishWheelJointState>true</publishWheelJointState>
+        <wheelAcceleration>false</wheelAcceleration>
+        <odometrySource>world</odometrySource>
+        <publishTf>1</publishTf>
+    </plugin>
+</gazebo>
+
 <!-- Rect Chassis Link -->
 <gazebo reference="rect_box">
     <material>Gazebo/Grey</material>
