@@ -37,10 +37,15 @@ class Mover:
         rospy.init_node("mover")
         # params foir class
         # moveit_objects
-        #robot = moveit_commander.RobotCommander()
+        group_name = "interbotix_arm"
+        gripper_name = "interbotix_gripper"
+        self._move_group = moveit_commander.MoveGroupCommander(group_name)
+        self._gripper_group = moveit_commander.MoveGroupCommander(gripper_name)
+
         self._scene = moveit_commander.PlanningSceneInterface()
-        group_name = "px100"
-        move_group = moveit_commander.MoveGroupCommander(group_name)
+        robot = moveit_commander.RobotCommander()
+        # Sleep for a reason???
+        rospy.sleep(5)
         # Build box table
         self._add_table()
 
@@ -54,7 +59,7 @@ class Mover:
         table_pose.pose.position.z = -(.5)*TABLE_HEIGHT_m
         table_name = "table"
         table_size = (TABLE_LENGTH_m, TABLE_WIDTH_m, TABLE_HEIGHT_m)
-        scene.add_box(table_name, table_pose, size=table_size)
+        self._scene.add_box(table_name, table_pose, size=table_size)
         self.wait_for_update(table_name, name_is_known=True)
 
     def wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
