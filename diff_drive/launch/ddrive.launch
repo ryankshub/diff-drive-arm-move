@@ -6,5 +6,5 @@
         <arg name="paused" value="true"/>
     </include>
     <param name="robot_description" command="xacro $(find diff_drive)/urdf/ddrive.urdf.xacro"/>
-    <node name="spawnner" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model madbot"/>
+    <node name="spawnner" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -z 0.1 -model madbot"/>
 </launch>
