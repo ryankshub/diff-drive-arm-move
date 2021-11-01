@@ -5,9 +5,11 @@
 # Project imports
 
 # Python imports
+import sys
 
 # 3rd-party imports
 import rospy 
+import moveit_commander
 
 class Mover:
     """
@@ -25,7 +27,10 @@ class Mover:
     PARAMS:
         + list(x,y,z) waypoints ~ a list of 3D waypoints 
     """
-    pass
+    def __init__(self):
+        """
+        """
+        
 
 
 # Main execution loop

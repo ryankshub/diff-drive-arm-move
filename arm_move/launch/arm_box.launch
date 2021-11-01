@@ -10,7 +10,7 @@
   <arg name="use_world_frame"                   default="true"/>
   <arg name="external_urdf_loc"                 default=""/>
   <arg name="use_rviz"                          default="false"/>
-  <arg name="world_name"                        default="$(find interbotix_xsarm_gazebo)/worlds/xsarm_gazebo.world"/>
+  <arg name="world_name"                        default="$(find arm_move)/worlds/arm_and_box.world"/>
   <arg name="gui"                               default="true"/>
   <arg name="debug"                             default="false"/>
   <arg name="paused"                            default="true"/>
