@@ -8,8 +8,10 @@
 import sys
 
 # 3rd-party imports
+import geometry_msgs.msg as geomsgs
 import rospy 
 import moveit_commander
+
 
 class Mover:
     """
@@ -30,8 +32,51 @@ class Mover:
     def __init__(self):
         """
         """
-        
+        # init moveit_commander and node
+        moveit_commander.roscpp_initialize(sys.argv)
+        rospy.init_node("mover")
+        # params foir class
+        # moveit_objects
+        #robot = moveit_commander.RobotCommander()
+        self._scene = moveit_commander.PlanningSceneInterface()
+        group_name = "px100"
+        move_group = moveit_commander.MoveGroupCommander(group_name)
+        # Build box table
+        self._add_table()
 
+    def _add_table(self):
+        # Build box table
+        TABLE_LENGTH_m = 0.75
+        TABLE_WIDTH_m = 0.75
+        TABLE_HEIGHT_m = 0.75
+        table_pose = geomsgs.PoseStamped()
+        table_pose.header.frame_id = "world"
+        table_pose.pose.position.z = -(.5)*TABLE_HEIGHT_m
+        table_name = "table"
+        table_size = (TABLE_LENGTH_m, TABLE_WIDTH_m, TABLE_HEIGHT_m)
+        scene.add_box(table_name, table_pose, size=table_size)
+        self.wait_for_update(table_name, name_is_known=True)
+
+    def wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
+        start = rospy.get_time()
+        seconds = rospy.get_time()
+        while(seconds - start < timeout) and not rospy.is_shutdown():
+            # Check if objects are in attached objects
+            attached_objects = self._scene.get_attached_objects([name])
+            is_attached = len(attached_objects.keys()) > 0
+
+            #Test new objects are in the scene
+            is_known = name in self._scene.get_known_object_names()
+
+            #Test if object match state
+            if (name_is_known == is_known and name_is_attached == is_attached):
+                return True
+
+            rospy.sleep(0.1)
+            seconds = rospy.get_time()
+        
+        #Exited while loop without returning
+        return False
 
 # Main execution loop
 if __name__ == "__main__":

@@ -55,6 +55,8 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>controller_manager</exec_depend>
+  <exec_depend>interbotix_xsarm_gazebo</exec_depend>
+  <exec_depend>interbotix_xsarm_descriptions</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
