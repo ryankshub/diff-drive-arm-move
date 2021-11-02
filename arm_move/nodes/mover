@@ -3,14 +3,15 @@
 # RKS
 
 # Project imports
-
+from arm_move.srv import ResetBox, ResetBoxResponse
 # Python imports
 import sys
 
 # 3rd-party imports
 import geometry_msgs.msg as geomsgs
 import moveit_commander
-import rospy 
+import rospy
+from rospy.core import rospydebug 
 import tf_conversions
 
 
@@ -38,6 +39,8 @@ class Mover:
         rospy.init_node("mover")
         # params for class
         self.waypoints = rospy.get_param("/arm_move/waypoints", [])
+        self._box_name = "realsense"
+        self._table_name = "table"
         # moveit_objects
         group_name = "interbotix_arm"
         gripper_name = "interbotix_gripper"
@@ -46,13 +49,19 @@ class Mover:
         self._scene = moveit_commander.PlanningSceneInterface()
         self._robot = moveit_commander.RobotCommander()
         # Sleep to let visualization or gazebo finish init
-        rospy.sleep(5)
+        rospy.sleep(3)
         # Build box table
         self._add_table()
         # Build realsense box
         self._add_realsense_box()
+        # ROS services
+        self._reset_service = rospy.Service('reset', ResetBox, self._handle_reset_service)
+        configurations = self._move_group.get_named_targets()
+        rospy.loginfo(f"Config point: {configurations}")
 
     def _add_table(self):
+        """
+        """
         # Build box table
         TABLE_LENGTH_m = 1.5
         TABLE_WIDTH_m = 1.5
@@ -60,26 +69,32 @@ class Mover:
         table_pose = geomsgs.PoseStamped()
         table_pose.header.frame_id = "world"
         table_pose.pose.position.z = -(.5)*TABLE_HEIGHT_m
-        table_name = "table"
+        quads = tf_conversions.transformations.quaternion_from_euler(0,0,0)
+        table_pose.pose.orientation.x = quads[0]
+        table_pose.pose.orientation.y = quads[1]
+        table_pose.pose.orientation.z = quads[2]
+        table_pose.pose.orientation.w = quads[3]
         table_size = (TABLE_LENGTH_m, TABLE_WIDTH_m, TABLE_HEIGHT_m)
-        self._scene.add_box(table_name, table_pose, size=table_size)
-        self.wait_for_update(table_name, name_is_known=True)
+        self._scene.add_box(self._table_name, table_pose, size=table_size)
+        self._wait_for_update(self._table_name, name_is_known=True)
+
 
     #TODO: This should be parsed from worlds file
     def _add_realsense_box(self, xyz=None, rpy=None):
+        """
+        """
         # Realsense box
         BOX_LENTH_m = 0.14
         BOX_WIDTH_m = 0.09
         BOX_HEIGHT_m = 0.05
         box_pose = geomsgs.PoseStamped()
         box_pose.header.frame_id = "world"
-
         # Handle position of box
         if xyz is not None:
             box_pose.pose.position.x = xyz[0]
             box_pose.pose.position.y = xyz[1]
             #Handle zed case
-            if xyz[2] is None:
+            if xyz[2] == 0:
                 box_pose.pose.position.z = .5*BOX_HEIGHT_m
             else:
                 box_pose.pose.position.z = xyz[2]
@@ -102,10 +117,31 @@ class Mover:
         box_pose.pose.orientation.w = quads[3]
 
         #Name and size of the box
-        box_name = "realsense"
         box_size = (BOX_LENTH_m, BOX_WIDTH_m, BOX_HEIGHT_m)
-        self._scene.add_box(box_name, box_pose, size=box_size)
-        self._wait_for_update(box_name, name_is_known=True)
+        self._scene.add_box(self._box_name, box_pose, size=box_size)
+        self._wait_for_update(self._box_name, name_is_known=True)
+
+
+    def _handle_reset_service(self, req):
+        new_xyz = (req.x, req.y, req.z)
+        new_rpy = (req.roll, req.pitch, req.yaw)
+        zero_xyz = all(v == 0 for v in new_xyz)
+        zero_rpy = all(v == 0 for v in new_rpy)
+        if not zero_xyz or not zero_rpy:
+            #Box has new position
+            self._scene.remove_world_object(name=self._box_name)
+            self._add_realsense_box(xyz=new_xyz, rpy=new_rpy)
+        # Set Robot to Home position
+        self._move_group.set_named_target('Home')
+        self._move_group.go(wait=True)
+        self._move_group.stop()
+        self._move_group.clear_pose_targets()
+        # Check if to clear waypoints
+        if req.clear:
+            self.waypoints = []
+
+        return ResetBoxResponse()
+
 
     def _wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
         start = rospy.get_time()
@@ -128,10 +164,20 @@ class Mover:
         #Exited while loop without returning
         return False
 
-# Main execution loop
+
+#Activate 'mover' node for Reactive node
+def main():
+    """
+    Main execution loop for mover node
+    """
+    mover = Mover()
+    rospy.spin()
+
+
+# Main Execution loop
 if __name__ == "__main__":
     try:
-        mover_node = Mover()
+        main()
     #If something kills this node, have it die
     except rospy.ROSInterruptException:
         pass
