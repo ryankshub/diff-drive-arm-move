@@ -71,7 +71,7 @@
     <arg name="dof"                               default="4"/>
   </include>
 
-  <node name="mover" pkg="arm_move" type="mover" ns="px100">
+  <node name="mover" pkg="arm_move" type="mover" ns="px100" output="screen">
     <remap from="/attach_collision_object" to="/px100/attach_collision_object"/>
     <remap from="/collision_object" to="/px100/collision_object"/>
   </node>

@@ -9,8 +9,9 @@ import sys
 
 # 3rd-party imports
 import geometry_msgs.msg as geomsgs
-import rospy 
 import moveit_commander
+import rospy 
+import tf_conversions
 
 
 class Mover:
@@ -35,25 +36,27 @@ class Mover:
         # init moveit_commander and node
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node("mover")
-        # params foir class
+        # params for class
+        self.waypoints = rospy.get_param("/arm_move/waypoints", [])
         # moveit_objects
         group_name = "interbotix_arm"
         gripper_name = "interbotix_gripper"
         self._move_group = moveit_commander.MoveGroupCommander(group_name)
         self._gripper_group = moveit_commander.MoveGroupCommander(gripper_name)
-
         self._scene = moveit_commander.PlanningSceneInterface()
-        robot = moveit_commander.RobotCommander()
-        # Sleep for a reason???
+        self._robot = moveit_commander.RobotCommander()
+        # Sleep to let visualization or gazebo finish init
         rospy.sleep(5)
         # Build box table
         self._add_table()
+        # Build realsense box
+        self._add_realsense_box()
 
     def _add_table(self):
         # Build box table
-        TABLE_LENGTH_m = 0.75
-        TABLE_WIDTH_m = 0.75
-        TABLE_HEIGHT_m = 0.75
+        TABLE_LENGTH_m = 1.5
+        TABLE_WIDTH_m = 1.5
+        TABLE_HEIGHT_m = 0.2
         table_pose = geomsgs.PoseStamped()
         table_pose.header.frame_id = "world"
         table_pose.pose.position.z = -(.5)*TABLE_HEIGHT_m
@@ -62,7 +65,49 @@ class Mover:
         self._scene.add_box(table_name, table_pose, size=table_size)
         self.wait_for_update(table_name, name_is_known=True)
 
-    def wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
+    #TODO: This should be parsed from worlds file
+    def _add_realsense_box(self, xyz=None, rpy=None):
+        # Realsense box
+        BOX_LENTH_m = 0.14
+        BOX_WIDTH_m = 0.09
+        BOX_HEIGHT_m = 0.05
+        box_pose = geomsgs.PoseStamped()
+        box_pose.header.frame_id = "world"
+
+        # Handle position of box
+        if xyz is not None:
+            box_pose.pose.position.x = xyz[0]
+            box_pose.pose.position.y = xyz[1]
+            #Handle zed case
+            if xyz[2] is None:
+                box_pose.pose.position.z = .5*BOX_HEIGHT_m
+            else:
+                box_pose.pose.position.z = xyz[2]
+        else:
+            #Initial position from gazebo world
+            box_pose.pose.position.x = 0.256919
+            box_pose.pose.position.y = -0.185243
+            box_pose.pose.position.z = .5*BOX_HEIGHT_m
+        
+        # Handle orientation of box
+        quads = None
+        if rpy is not None:
+            quads = tf_conversions.transformations.quaternion_from_euler(
+                rpy[0],rpy[1],rpy[2])
+        else:
+            quads = tf_conversions.transformations.quaternion_from_euler(0,0,0)
+        box_pose.pose.orientation.x = quads[0]
+        box_pose.pose.orientation.y = quads[1]
+        box_pose.pose.orientation.z = quads[2]
+        box_pose.pose.orientation.w = quads[3]
+
+        #Name and size of the box
+        box_name = "realsense"
+        box_size = (BOX_LENTH_m, BOX_WIDTH_m, BOX_HEIGHT_m)
+        self._scene.add_box(box_name, box_pose, size=box_size)
+        self._wait_for_update(box_name, name_is_known=True)
+
+    def _wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
         start = rospy.get_time()
         seconds = rospy.get_time()
         while(seconds - start < timeout) and not rospy.is_shutdown():
