@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  moveit_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -57,6 +58,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   ResetBox.srv
+  PxKinStep.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -69,7 +71,8 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
+  std_msgs  
+  moveit_msgs # Or other packages containing msgs
 )
 
 ################################################
@@ -104,7 +107,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES arm_move
- CATKIN_DEPENDS rospy std_msgs message_runtime
+ CATKIN_DEPENDS rospy std_msgs message_runtime moveit_msgs
 #  DEPENDS system_lib
 )
 

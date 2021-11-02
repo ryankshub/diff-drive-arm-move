@@ -1,0 +1,10 @@
+# Request for arm_move/step service to move robot to new point and adjust gripper
+float64 x     # New x position of box
+float64 y     # New y position of box
+float64 z     # New z position of box
+bool open    # True, if the gripper should be open
+---
+# Response: Error code from point
+# Refer to http://docs.ros.org/en/melodic/api/moveit_msgs/html/msg/MoveItErrorCodes.html for 
+# detailed descriptions of error
+moveit_msgs/MoveItErrorCodes error_val
