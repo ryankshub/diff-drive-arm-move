@@ -1,14 +1,67 @@
 #!/usr/bin/env python3
-PKG = 'arm_move'
+# Integrated Test: Motion Test
+# RKS
 
+# Project imports
+from arm_move.srv import PxKinStep, PxKinStepRequest
+from arm_move.srv import ResetBox
+# Python imports
 import unittest
+# 3rd-party imports
+import moveit_msgs.msg as movmsg
+import rospy
+
+# Constants
+PKG = 'arm_move'
 
 ## Sample test
 class TestMotion(unittest.TestCase):
-    def test_one_is_one(self):
-        self.assertEqual(1,1,"Math is broken, everything is a lie")
+    def __init__(self, *args):
+        super(TestMotion, self).__init__(*args)
+        rospy.init_node("test_motion")
+        # Make clients
+        self.reset_client = rospy.ServiceProxy("/px100/reset", ResetBox)
+        self.step_client = rospy.ServiceProxy("/px100/step", PxKinStep)
+        rospy.wait_for_service("/px100/reset")
+        try:
+            self.reset_client()
+        except rospy.ServiceException as e:
+            print(f"Reset service call failed: {e}")
+            rospy.logerr(e)
+
+    def test_failed_plan(self):
+        success_pt = PxKinStepRequest()
+        success_pt.x = 0.201215
+        success_pt.y = 0.172405
+        success_pt.z = -0.3
+        success_pt.open = True
+        rospy.wait_for_service("/px100/step")
+        try:
+            resp = self.step_client(success_pt)
+        except rospy.ServiceException as e:
+            print(f"Step service call failed: {e}")
+            rospy.logerr(e)
+
+        self.assertNotEqual(resp.error_code.val, movmsg.MoveItErrorCodes.SUCCESS,
+            "Error should NOT be successful")
+
+    def test_success_plan(self):
+        success_pt = PxKinStepRequest()
+        success_pt.x = 0.201215
+        success_pt.y = 0.172405
+        success_pt.z = 0.033
+        success_pt.open = True
+        rospy.wait_for_service("/px100/step")
+        try:
+            resp = self.step_client(success_pt)
+        except rospy.ServiceException as e:
+            print(f"Step service call failed: {e}")
+            rospy.logerr(e)
+
+        self.assertEqual(resp.error_val.val, movmsg.MoveItErrorCodes.SUCCESS,
+            "Error should be successful")
         
-        
+
 if __name__ == "__main__":
     import rostest
     rostest.rosrun(PKG, 'motion_test', TestMotion)

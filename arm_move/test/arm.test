@@ -1,4 +1,6 @@
 <!-- Integration test for arm -->
 <launch>
+    <arg name="use_fake" default="true"/>
+    <include file="$(find arm_move)/launch/arm_box.launch" pass_all_args="true"/>
     <test test-name="test" pkg="arm_move" type="motion_test"/>
 </launch>

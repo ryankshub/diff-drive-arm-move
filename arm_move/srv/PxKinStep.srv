@@ -7,4 +7,4 @@ bool open    # True, if the gripper should be open
 # Response: Error code from point
 # Refer to http://docs.ros.org/en/melodic/api/moveit_msgs/html/msg/MoveItErrorCodes.html for 
 # detailed descriptions of error
-moveit_msgs/MoveItErrorCodes error_val
+moveit_msgs/MoveItErrorCodes error_code
