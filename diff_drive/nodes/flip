@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+# Flip Node
+# RKS
+
+# Project imports
+
+# Python imports
+
+# 3rd-party imports
+import geometry_msgs.msg as geomsg
+import rospy
+
+class Flip:
+    """
+    ROS Node responsible for . 
+
+    PUBLISHERS:
+        + diff/cmd_vel Twist ~ 
+    """
+    def __init__(self):
+        """
+        """
+        rospy.init_node('flip')
+        self._v = .5
+        self.rate = rospy.Rate(2)
+        self.pub = rospy.Publisher('diff/cmd_vel', geomsg.Twist, queue_size=10)
+        while not rospy.is_shutdown():
+            self.move(self._v)
+            self.move(-self._v)
+
+    
+
+    def move(self, speed):
+        time = rospy.Time.now()
+        duration = rospy.Duration(2)
+        time_limit = time + duration
+        while(rospy.Time.now() < time_limit):
+            linear_v = geomsg.Vector3(speed, 0, 0)
+            angular_v = geomsg.Vector3(0,0,0)
+            target_twist = geomsg.Twist(linear=linear_v, angular=angular_v)
+            self.pub.publish(target_twist)
+            self.rate.sleep()
+
+#Activate 'flip' node
+def main():
+    """
+    Main execution loop for flip node
+    """
+    flip = Flip()
+
+# Main Execution loop
+if __name__ == "__main__":
+    try:
+        main()
+    #If something kills this node, have it die
+    except rospy.ROSInterruptException:
+        pass
+
+

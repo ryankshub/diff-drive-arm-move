@@ -1,0 +1,3 @@
+<launch>
+    <node name="flip" pkg="diff_drive" type="flip" output="screen"/>
+</launch>
