@@ -30,7 +30,7 @@ This package contains:
 ## **Dependencies and Installation**
 
 ### *ROS Dependencies*
-This package was developed and tested in ros-noetic. Homework2 is designed and should be built using catkin. This package also requires the turtlesim package to run. This should usually come with your ros installation, but to check this run: 
+This package was developed and tested in ros-noetic. Arm_move was designed and built using catkin. This package also requires the turtlesim package to run. This should usually come with your ros installation, but to check this run: 
 
 This should result a little screen with a turtle in the center. If the window doesn't pop up, refer to [ROS wiki](http://wiki.ros.org) to install turtlesim on your machine.
 
@@ -48,6 +48,8 @@ the python version. Refer to [Numpy docs](https://numpy.org/install/) for instal
 
 
 Example of simulation video:
+
+https://user-images.githubusercontent.com/90436131/140406922-dec6063c-ba8d-451f-aa84-5ba80fb92d45.mp4
 
 
 Example of actual video:
