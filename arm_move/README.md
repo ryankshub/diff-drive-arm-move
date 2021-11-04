@@ -30,6 +30,7 @@ This package contains:
 - test
     * `motion_test` ~ A testfile asserting proper error codes from valid/invalid
     end effector points
+    * `arm.test` ~ Launch testfile for testing.
 - worlds
     * `arm_and_box.world` ~ World file for gazebo testing
 - `README.md`
