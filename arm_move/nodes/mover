@@ -71,10 +71,11 @@ class Mover:
         self._follow_service = rospy.Service('follow', SimpleBool, self._handle_follow_service)
         # Filter waypoints
         self.waypoints = self._filter_waypoints(self.waypoints)
-        configurations = self._move_group.get_named_targets()
-        grip_configurations = self._gripper_group.get_named_targets()
-        rospy.loginfo(f"Config point: {configurations}")
-        rospy.loginfo(f"Config point: {grip_configurations}")
+        # Indicate node is active to user
+        # We have a lot of things going one and this msg is 
+        # generally pretty helpful in case of any 
+        # moveit_commander shenangians. 
+        rospy.loginfo("Node mover is ACTIVE")
 
         # Start State and state objects
         self._state = State.REST
