@@ -16,6 +16,9 @@ PKG = 'arm_move'
 
 ## Sample test
 class TestMotion(unittest.TestCase):
+    """
+    Simple test for valid motions
+    """
     def __init__(self, *args):
         super(TestMotion, self).__init__(*args)
         rospy.init_node("test_motion")
@@ -30,6 +33,13 @@ class TestMotion(unittest.TestCase):
             rospy.logerr(e)
 
     def test_failed_plan(self):
+        """
+        Input:
+            Given an invalid point, call the 'step' service
+
+        Expected Output:
+            An error_code of failure
+        """
         success_pt = PxKinStepRequest()
         success_pt.x = 0.201215
         success_pt.y = 0.172405
@@ -46,6 +56,13 @@ class TestMotion(unittest.TestCase):
             "Error should NOT be successful")
 
     def test_success_plan(self):
+        """
+        Input:
+            Given a valid point, call the 'step' service
+
+        Expected Output:
+            An error_code reflecting success
+        """
         success_pt = PxKinStepRequest()
         success_pt.x = 0.201215
         success_pt.y = 0.172405

@@ -32,14 +32,23 @@ class State(Enum):
 
 class Mover:
     """
-    ROS Node responsible for 
+    ROS Node responsible for interacting with px100 robot. The node
+    set-ups the planning scene and provides end-effectors commands to either 
+    a simulated or real px100 based on the launch file
 
     SERVICES:
-        + reset ResetBox ~ 
+        + reset ResetBox ~ Moves the position of the 
+        realsense box, sets the robot into it's home position,
+        and if the clear bool is true, clears the current waypoints
 
-        + step PxKinStep ~
+        + step PxKinStep ~ Attempts to move the position of the 
+        end-effector and sets the state of the gripper. If the
+        requested point is unreachable, the req is ignored. If the robot
+        can reach the point, the waypoint is added to the internal
+        list of waypoints
 
-        + follow SimpleBool ~
+        + follow SimpleBool ~ Triggers the robot to cycle through the list of waypoints, 
+        placing the end-effector at each location and setting the gripper state.
     
     PARAMS:
         + list(x,y,z,bool) waypoints ~ a list of 3D waypoints where the bool
@@ -221,6 +230,20 @@ class Mover:
 
 
     def _handle_follow_service(self, req):
+        """
+        Service handler for `follow` service. 
+        When received, the robot cycles through the list of waypoints, placing
+        the end-effector at each location and setting the gripper state.
+
+        Args:
+        SimpleBool req ~ 
+            Request to trigger service. Contains a single bool; if true, the
+            robot should execute the list of waypoint indefinitly. 
+
+        Rtn:
+        EmptyResponse ~ 
+            Response to indicate request received. Contains no data
+        """
         # Stop robot motion
         self._state = State.REST
         self._move_group.stop()
@@ -232,6 +255,24 @@ class Mover:
 
 
     def _handle_reset_service(self, req):
+        """
+        Service handler for `reset` service. 
+        When received, the service moves the position of the 
+        realsense box, sets the robot into it's home position,
+        and if the clear bool is true, clears the current waypoints
+
+        Args:
+        SimpleBool req ~ 
+            Request to trigger service. Contains the new position and 
+            orientation of the box and a clear boolean. Note: If the user
+            a zero vector for both position and orientation is assumed to 
+            be a shortcut to pass the clear boolean; the position and 
+            orientation will be be ignored in that case
+
+        Rtn:
+        EmptyResponse ~ 
+            Response to indicate request received. Contains no data
+        """
         # Stop robot motion
         self._state = State.REST
         self._move_group.stop()
@@ -256,6 +297,25 @@ class Mover:
 
     
     def _handle_step_service(self, req):
+        """
+        Service handler for `step` service. 
+        When received, the service moves the position of the 
+        end-effector and sets the state of the gripper. If the
+        requested point is unreachable, the req is ignored. If the robot
+        can reach the point, the waypoint is added to the internal
+        list of waypoints
+
+        Args:
+        SimpleBool req ~ 
+            Request to trigger service. Contains a suggested xyz for the
+            end-effector and boolean for the gripper state
+
+        Rtn:
+        PxKinStepResponse ~ 
+            Response to indicate request received. Contains a error_code 
+            based on the robot's attempt to plan a trajectory toward the point.
+            The error code is based on moveit_msgs.msg.MoveItErrorCode
+        """
         # Stop robot motion
         self._state = State.REST
         self._move_group.stop()
@@ -281,6 +341,18 @@ class Mover:
 
      
     def _wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
+        """
+        Gives the planning scene interface time to add a new objects to the visualization
+
+        Args:
+            string name ~
+                Name of the new object
+            bool name_is_known ~ default: False
+                Whether the object should be known in the planning scene
+            bool name_is_attached ~ default: False
+                Whether the object should be attached to the robot in the 
+                planning scene
+        """
         start = rospy.get_time()
         seconds = rospy.get_time()
         while(seconds - start < timeout) and not rospy.is_shutdown():
