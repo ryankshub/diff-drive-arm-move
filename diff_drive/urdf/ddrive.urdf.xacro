@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<!-- Xacro file for 2-wheeled cart with caster known as madbot-->
 <robot name="madbot" xmlns:xacro="https://www.ros.org/wiki/xacro">
     <!-- Get properties from madbot_dim.yaml configuration -->
     <xacro:property name="madbot_yaml_file" value="$(find diff_drive)/config/madbot_dim.yaml"/>

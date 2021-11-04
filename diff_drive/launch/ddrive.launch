@@ -5,10 +5,12 @@
         <arg name="world_name" value="$(find diff_drive)/worlds/ddrive.world"/>
         <arg name="paused" value="true"/>
     </include>
+    <!-- Load rviz profile-->
     <param name="robot_description" command="xacro $(find diff_drive)/urdf/ddrive.urdf.xacro"/>
     <node name="spawnner" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -z 0.1 -model madbot"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find diff_drive)/launch/madbot.rviz"/>
+    <!-- Activate flip node-->
     <node name="flip" pkg="diff_drive" type="flip"/>
 </launch>

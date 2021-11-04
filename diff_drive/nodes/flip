@@ -12,18 +12,26 @@ import rospy
 
 class Flip:
     """
-    ROS Node responsible for . 
+    ROS Node responsible for providing velocities to madbot that
+    cause it to move forward and backwards, flipping in the process 
 
     PUBLISHERS:
-        + diff/cmd_vel Twist ~ 
+        + diff/cmd_vel Twist ~ Commanded velocity for madbot
     """
     def __init__(self):
         """
+        Constructor of ROS Node Flip class. Creates all ROS 
+        publisher for velocity command
+
+        Public members
+        rospy.Rate: rate ~ published rate of command velocity, 
+            Set at 2 Hz
         """
+
         rospy.init_node('flip')
         self._v = .5
         self.rate = rospy.Rate(2)
-        self.pub = rospy.Publisher('diff/cmd_vel', geomsg.Twist, queue_size=10)
+        self._pub = rospy.Publisher('diff/cmd_vel', geomsg.Twist, queue_size=10)
         while not rospy.is_shutdown():
             self.move(self._v)
             self.move(-self._v)
@@ -31,6 +39,18 @@ class Flip:
     
 
     def move(self, speed):
+        """
+        Commands a linear velocity with magnitude speed and 
+        direction sign(speed)
+
+        Args:
+        float speed ~ commanded speed for madbot
+
+        Pubs:
+        geometry_msg.msg.Twist diff/cmd_vel ~ commanded 1D velocity for madbot
+            Despite support for angular motions, this Twist will only have the linear
+            component set
+        """
         time = rospy.Time.now()
         duration = rospy.Duration(2)
         time_limit = time + duration
@@ -38,7 +58,7 @@ class Flip:
             linear_v = geomsg.Vector3(speed, 0, 0)
             angular_v = geomsg.Vector3(0,0,0)
             target_twist = geomsg.Twist(linear=linear_v, angular=angular_v)
-            self.pub.publish(target_twist)
+            self._pub.publish(target_twist)
             self.rate.sleep()
 
 #Activate 'flip' node

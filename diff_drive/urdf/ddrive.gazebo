@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot>
-
+<!-- Gazebo file for madbot's urdf-->
 <!-- Model Plugin for ddrive-->
 <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
