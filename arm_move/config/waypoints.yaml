@@ -1,0 +1,4 @@
+#Yaml file for gazebo demo waypoints
+
+arm_move: #List of waypoint [x.y] for turtle to follow
+  waypoints: [[0.201215, 0.172405, 0.1903, true], [0.201215, 0.172405, 0.032, true], [0.201215, 0.0, 0.1903, false], [0.201215, 0.0, 0.1903, true]]

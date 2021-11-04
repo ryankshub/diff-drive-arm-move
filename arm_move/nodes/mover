@@ -13,6 +13,7 @@ from collections import deque
 # 3rd-party imports
 import geometry_msgs.msg as geomsgs
 import moveit_commander
+import numpy as np
 import rospy
 import tf_conversions
 
@@ -48,16 +49,16 @@ class Mover:
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node("mover")
         # params for class
-        self.waypoints = rospy.get_param("/arm_move/waypoints", [])
+        self.waypoints = rospy.get_param("/px100/arm_move/waypoints", [])
         self._box_name = "realsense"
         self._table_name = "table"
         # moveit_objects
         group_name = "interbotix_arm"
         gripper_name = "interbotix_gripper"
+        self._robot = moveit_commander.RobotCommander()
+        self._scene = moveit_commander.PlanningSceneInterface() # THIS IS BLOODY BLOCKING FUNCTION
         self._move_group = moveit_commander.MoveGroupCommander(group_name)
         self._gripper_group = moveit_commander.MoveGroupCommander(gripper_name)
-        self._scene = moveit_commander.PlanningSceneInterface()
-        self._robot = moveit_commander.RobotCommander()
         # Sleep to let visualization or gazebo finish init
         rospy.sleep(3)
         # Build box table
@@ -129,8 +130,8 @@ class Mover:
                 box_pose.pose.position.z = xyz[2]
         else:
             #Initial position from gazebo world
-            box_pose.pose.position.x = 0.256919
-            box_pose.pose.position.y = -0.185243
+            box_pose.pose.position.x = 0.23
+            box_pose.pose.position.y = 0.0
             box_pose.pose.position.z = .5*BOX_HEIGHT_m
         
         # Handle orientation of box
@@ -139,7 +140,7 @@ class Mover:
             quads = tf_conversions.transformations.quaternion_from_euler(
                 rpy[0],rpy[1],rpy[2])
         else:
-            quads = tf_conversions.transformations.quaternion_from_euler(0,0,0)
+            quads = tf_conversions.transformations.quaternion_from_euler(0,0,np.pi/2)
         box_pose.pose.orientation.x = quads[0]
         box_pose.pose.orientation.y = quads[1]
         box_pose.pose.orientation.z = quads[2]
@@ -159,6 +160,7 @@ class Mover:
             wpt_xyz = (point[0], point[1], point[2])
             self._move_group.set_position_target(wpt_xyz)
             success, _, _, _ = self._move_group.plan()
+            self._move_group.clear_pose_targets()
             if not success:
                 continue
             filtered_wpts.append(point)
@@ -264,6 +266,9 @@ class Mover:
         # Robot should execute go motion
         elif self._state == State.EXEC_MOVE:
             # For 'reset' and 'step' calls
+            self._gripper_group.go(wait=True)
+            self._gripper_group.stop()
+            self._gripper_group.clear_pose_targets()
             self._move_group.go(wait=True)
             self._move_group.stop()
             self._move_group.clear_pose_targets()
@@ -274,37 +279,42 @@ class Mover:
             # for 'follow' service call
             # Set rotation counter
             self._rotation_counter = 0
-            while True:
-                # Get target
-                target_pt = self._wpt_queue[0]
-                # Get xyz and gripper position bool
-                target_xyz = (target_pt[0], target_pt[1], target_pt[2])
-                target_grip = target_pt[3]
-                # Set targets
-                self._move_group.set_position_target(target_xyz)
-                if target_grip:
-                    self._gripper_group.set_named_target('Open')
-                else:
-                    self._gripper_group.set_named_target('Closed')
-                # Gripper cmd first
-                self._gripper_group.go(wait=True)
-                self._gripper_group.stop()
-                self._gripper_group.clear_pose_targets()
-                # Movement cmd next
-                self._move_group.go(wait=True)
-                self._move_group.stop()
-                self._move_group.clear_pose_targets()
-                # Update queue for target
-                self._wpt_queue.rotate(-1)
-                self._rotation_counter += 1
-                # Check for kill conditions
-                # If we are not in EXEC_PLAN: break loop
-                if self._state != State.EXEC_PLAN:
-                    break
-                elif (self._rotation_counter % len(self._wpt_queue)) == 0 and not self._cycle:
-                    # We only follow the path once
-                    self._state = State.REST
-                    break 
+            # follow path
+            if len(self._wpt_queue) > 0:
+                while True:
+                    # Get target
+                    target_pt = self._wpt_queue[0]
+                    # Get xyz and gripper position bool
+                    target_xyz = (target_pt[0], target_pt[1], target_pt[2])
+                    target_grip = target_pt[3]
+                    # Set targets
+                    self._move_group.set_position_target(target_xyz)
+                    if target_grip:
+                        self._gripper_group.set_named_target('Open')
+                    else:
+                        self._gripper_group.set_named_target('Closed')
+                    # Gripper cmd first
+                    self._gripper_group.go(wait=True)
+                    self._gripper_group.stop()
+                    self._gripper_group.clear_pose_targets()
+                    # Movement cmd next
+                    self._move_group.go(wait=True)
+                    self._move_group.stop()
+                    self._move_group.clear_pose_targets()
+                    # Update queue for target
+                    self._wpt_queue.rotate(-1)
+                    self._rotation_counter += 1
+                    # Check for kill conditions
+                    # If we are not in EXEC_PLAN: break loop
+                    if self._state != State.EXEC_PLAN:
+                        break
+                    elif (self._rotation_counter % len(self._wpt_queue)) == 0 and not self._cycle:
+                        # We only follow the path once
+                        self._state = State.REST
+                        break 
+            # If no path, just rest
+            else:
+                self._state = State.REST
 
         # Something has gone horribly and this node should die    
         else: 
