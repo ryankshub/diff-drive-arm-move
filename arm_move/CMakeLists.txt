@@ -59,6 +59,7 @@ add_service_files(
   FILES
   ResetBox.srv
   PxKinStep.srv
+  SimpleBool.srv
 )
 
 ## Generate actions in the 'action' folder

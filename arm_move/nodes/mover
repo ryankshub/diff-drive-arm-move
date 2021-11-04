@@ -3,18 +3,30 @@
 # RKS
 
 # Project imports
-from arm_move.srv import PxKinStep, PxKinStepResponse
+from arm_move.srv import PxKinStep
+from arm_move.srv import SimpleBool, SimpleBoolResponse
 from arm_move.srv import ResetBox, ResetBoxResponse
 # Python imports
 import sys
-
+from enum import Enum
+from collections import deque
 # 3rd-party imports
 import geometry_msgs.msg as geomsgs
 import moveit_commander
-import moveit_msgs.msg as movmsgs
 import rospy
-from rospy.core import rospydebug 
 import tf_conversions
+
+
+class State(Enum):
+    """
+    State of the control loop. 
+    REST ~ the robot is not moving
+    EXEC_MOVE ~ the robot is executing a single move
+    EXEC_PLAN ~ the robot is executing a plan
+    """
+    REST = 0
+    EXEC_MOVE = 1
+    EXEC_PLAN = 2
 
 
 class Mover:
@@ -25,10 +37,6 @@ class Mover:
         + step 
 
         + follow
-
-    BROADCAST:
-        + static world -> odom ~ a rotation operation by theta_0, the initial heading
-        of the turtle. 
     
     PARAMS:
         + list(x,y,z) waypoints ~ a list of 3D waypoints 
@@ -59,10 +67,26 @@ class Mover:
         # ROS services
         self._reset_service = rospy.Service('reset', ResetBox, self._handle_reset_service)
         self._step_service = rospy.Service('step', PxKinStep, self._handle_step_service)
+        self._follow_service = rospy.Service('follow', SimpleBool, self._handle_follow_service)
+        # Filter waypoints
+        self.waypoints = self._filter_waypoints(self.waypoints)
         configurations = self._move_group.get_named_targets()
         grip_configurations = self._gripper_group.get_named_targets()
         rospy.loginfo(f"Config point: {configurations}")
         rospy.loginfo(f"Config point: {grip_configurations}")
+
+        # Start State and state objects
+        self._state = State.REST
+        self._wpt_queue = None
+        self._cycle = False
+        self._rotation_counter = 0
+
+        #init node
+        self._RATE = 5 # in Hz
+        self._time_delta = 1./self._RATE
+        rospy.Timer(rospy.Duration(self._time_delta), self.main_loop)
+        rospy.spin()
+
 
     def _add_table(self):
         """
@@ -127,7 +151,37 @@ class Mover:
         self._wait_for_update(self._box_name, name_is_known=True)
 
 
+    def _filter_waypoints(self, wpt_list):
+        filtered_wpts = []
+        for point in wpt_list:
+            if not isinstance(point[3], bool):
+                continue
+            wpt_xyz = (point[0], point[1], point[2])
+            self._move_group.set_position_target(wpt_xyz)
+            success, _, _, _ = self._move_group.plan()
+            if not success:
+                continue
+            filtered_wpts.append(point)
+        return filtered_wpts
+
+
+    def _handle_follow_service(self, req):
+        # Stop robot motion
+        self._state = State.REST
+        self._move_group.stop()
+
+        self._cycle = req.cycle
+        self._wpt_queue = deque(self.waypoints)
+        self._state = State.EXEC_PLAN
+        return SimpleBoolResponse()
+
+
     def _handle_reset_service(self, req):
+        # Stop robot motion
+        self._state = State.REST
+        self._move_group.stop()
+
+        # Set new point for box
         new_xyz = (req.x, req.y, req.z)
         new_rpy = (req.roll, req.pitch, req.yaw)
         zero_xyz = all(v == 0 for v in new_xyz)
@@ -138,40 +192,39 @@ class Mover:
             self._add_realsense_box(xyz=new_xyz, rpy=new_rpy)
         # Set Robot to Home position
         self._move_group.set_named_target('Home')
-        self._move_group.go(wait=True)
-        self._move_group.stop()
-        self._move_group.clear_pose_targets()
         # Check if to clear waypoints
         if req.clear:
             self.waypoints = []
-
+        # Update State
+        self._state = State.EXEC_MOVE
         return ResetBoxResponse()
 
     
     def _handle_step_service(self, req):
+        # Stop robot motion
+        self._state = State.REST
+        self._move_group.stop()
+        # Read request
         pose_xyz = (req.x, req.y, req.z)
         self._move_group.set_position_target(pose_xyz)
         
-        success, plan, _, err_code = self._move_group.plan()
+        success, _, _, err_code = self._move_group.plan()
 
         if success:
             # If reachable, set gripper first, then move
             # Add waypoint
-            self.waypoints.append([req.x, req.y, req.x])
+            self.waypoints.append([req.x, req.y, req.z, req.open])
+            # Add gripper target
             if req.open:
                 self._gripper_group.set_named_target('Open')
             else:
                 self._gripper_group.set_named_target('Closed')
-            self._gripper_group.go(wait=True)
-            self._gripper_group.stop()
-            self._gripper_group.clear_pose_targets()
-            self._move_group.execute(plan, wait=True)
-            self._move_group.stop()
+            # Add plan for state execution
+            self._state = State.EXEC_MOVE
+
         return err_code
 
-
-        
-        
+     
     def _wait_for_update(self, name, name_is_known=False, name_is_attached=False, timeout=3):
         start = rospy.get_time()
         seconds = rospy.get_time()
@@ -192,6 +245,71 @@ class Mover:
         
         #Exited while loop without returning
         return False
+
+
+    def main_loop(self, event):
+        """
+        Main execution loop of mover node
+
+        Args:
+            event: A rospy.Timer event
+        """
+        # Robot is not moving
+        if self._state == State.REST:
+            # Robot is taking a load off
+            # Clear the state machine varibles
+            # This is redundant, but just here for safety
+            self._wpt_queue = None
+
+        # Robot should execute go motion
+        elif self._state == State.EXEC_MOVE:
+            # For 'reset' and 'step' calls
+            self._move_group.go(wait=True)
+            self._move_group.stop()
+            self._move_group.clear_pose_targets()
+            self._state = State.REST
+
+        # Robot should exection plan
+        elif self._state == State.EXEC_PLAN:
+            # for 'follow' service call
+            # Set rotation counter
+            self._rotation_counter = 0
+            while True:
+                # Get target
+                target_pt = self._wpt_queue[0]
+                # Get xyz and gripper position bool
+                target_xyz = (target_pt[0], target_pt[1], target_pt[2])
+                target_grip = target_pt[3]
+                # Set targets
+                self._move_group.set_position_target(target_xyz)
+                if target_grip:
+                    self._gripper_group.set_named_target('Open')
+                else:
+                    self._gripper_group.set_named_target('Closed')
+                # Gripper cmd first
+                self._gripper_group.go(wait=True)
+                self._gripper_group.stop()
+                self._gripper_group.clear_pose_targets()
+                # Movement cmd next
+                self._move_group.go(wait=True)
+                self._move_group.stop()
+                self._move_group.clear_pose_targets()
+                # Update queue for target
+                self._wpt_queue.rotate(-1)
+                self._rotation_counter += 1
+                # Check for kill conditions
+                # If we are not in EXEC_PLAN: break loop
+                if self._state != State.EXEC_PLAN:
+                    break
+                elif (self._rotation_counter % len(self._wpt_queue)) == 0 and not self._cycle:
+                    # We only follow the path once
+                    self._state = State.REST
+                    break 
+
+        # Something has gone horribly and this node should die    
+        else: 
+            rospy.signal_shutdown("Mover node has entered undefined state")
+            exit(1)
 
 
 #Activate 'mover' node for Reactive node

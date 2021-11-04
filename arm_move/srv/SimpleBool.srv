@@ -1,0 +1,6 @@
+# Request for arm_move/follow service. 
+# Note: This request will have the robot follow waypoints regardless of the value of cycle
+# Cycle just tells the node if the robot would execute the waypoint list once or forever(until interrupt)
+bool cycle # If true, robot will follow waypoint list 
+---
+# Response: Empty Response 
