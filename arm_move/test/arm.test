@@ -1,0 +1,4 @@
+<!-- Integration test for arm -->
+<launch>
+    <test test-name="test" pkg="arm_move" type="motion_test"/>
+</launch>

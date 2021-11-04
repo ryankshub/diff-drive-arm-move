@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+PKG = 'arm_move'
+
+import unittest
+
+## Sample test
+class TestMotion(unittest.TestCase):
+    def test_one_is_one(self):
+        self.assertEqual(1,1,"Math is broken, everything is a lie")
+        
+        
+if __name__ == "__main__":
+    import rostest
+    rostest.rosrun(PKG, 'motion_test', TestMotion)
