@@ -1,0 +1,7 @@
+<!-- Main Launch file for ease of use-->
+<launch>
+    <arg name="use_fake" default="false"/>
+    <arg name="use_gazebo" default="false"/>
+    <arg name="use_actual" default="false"/>
+    <include file="$(find arm_move)/launch/arm_box.launch" pass_all_args="true"/>
+</launch>
