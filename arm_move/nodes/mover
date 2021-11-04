@@ -32,18 +32,30 @@ class State(Enum):
 
 class Mover:
     """
+    ROS Node responsible for 
+
     SERVICES:
-        + reset 
+        + reset ResetBox ~ 
 
-        + step 
+        + step PxKinStep ~
 
-        + follow
+        + follow SimpleBool ~
     
     PARAMS:
-        + list(x,y,z) waypoints ~ a list of 3D waypoints 
+        + list(x,y,z,bool) waypoints ~ a list of 3D waypoints where the bool
+            at the end is true if the gripper should be opened, false if the
+            gripper should be closed
     """
     def __init__(self):
         """
+        Constructor of ROS Node Mover class. Creates all 3 of 
+        the services, initializes node and moveit_commander, and sets up
+        all internal varibles
+
+        Public members
+        list waypoints: Points of (x,y,z,bool) which represent the end-effector 
+        position and gripper state. Note: This function will filter any initial 
+        waypoint that is not reachable by the robot. 
         """
         # init moveit_commander and node
         moveit_commander.roscpp_initialize(sys.argv)
@@ -92,6 +104,10 @@ class Mover:
 
     def _add_table(self):
         """
+        Add table to rviz visualizations
+
+        Mods:
+            Adds a box (table) to planning_scene_interface
         """
         # Build box table
         TABLE_LENGTH_m = 1.5
@@ -113,6 +129,21 @@ class Mover:
     #TODO: This should be parsed from worlds file
     def _add_realsense_box(self, xyz=None, rpy=None):
         """
+        Add realsense_box to rviz visualizations
+
+        Args:
+            tuple xyz: default=None
+                The position for the center of the box. If no position
+                is provided, the box is placed at coordinates:
+                    x: 0.23
+                    y: 0.0
+                    z: half of the box's height
+            tuple rpy: default None
+                The orientation of the box. If no orientation is provided,
+                the orientation is set at:
+                    roll: 0, pitch: 0, yaw: 0
+        Mods:
+            Adds a box to planning_scene_interface
         """
         # Realsense box
         BOX_LENTH_m = 0.14
@@ -154,15 +185,36 @@ class Mover:
 
 
     def _filter_waypoints(self, wpt_list):
+        """
+        Filters out any invalid waypoints from the waypoint list provided.
+        An invalid waypoint satisfies 1 of the following conditions:
+            1. The fourth element of the waypoint, representing gripper state,
+                is not a boolean
+            2. The x, y, z of the waypoint is unreachable for the robot
+        
+        Args:
+            list[x,y,z,bool] wpt_list: 
+                A list of 4-elem collections that contain:
+                    - The x, y, z position of the end effector
+                    - The state of the gripper at that point(true = open)
+        
+        Rtns:
+            list[x,y,z,bool] filtered_wpts:
+                A list of 4-elem points that all valid
+        """
         filtered_wpts = []
         for point in wpt_list:
             if not isinstance(point[3], bool):
+                rospy.logwarn(f"Waypoint {point} 4th element should be a bool")
+                rospy.logwarn(f"Waypoint removed from waypoint list")
                 continue
             wpt_xyz = (point[0], point[1], point[2])
             self._move_group.set_position_target(wpt_xyz)
             success, _, _, _ = self._move_group.plan()
             self._move_group.clear_pose_targets()
             if not success:
+                rospy.logwarn(f"Waypoint {point} end effector is unreachable")
+                rospy.logwarn(f"Waypoint removed from waypoint list")
                 continue
             filtered_wpts.append(point)
         return filtered_wpts

@@ -1,5 +1,7 @@
+<!-- Launch file for interacting with the px100.--> 
+<!-- Heavily based on interbotix launch file xsarm_moveit.launch-->
 <launch>
-
+  <!-- Initial arguments-->
   <arg name="robot_model"                       default="px100"/>
   <arg name="robot_name"                        default="$(arg robot_model)"/>
   <arg name="base_link_frame"                   default="base_link"/>
@@ -16,13 +18,16 @@
   <arg name="dof"                               default="4"/>
   <arg name="world_name"                        default="$(find arm_move)/worlds/arm_and_box.world"/>
 
+  <!--load waypoint parameters-->
   <rosparam command="load" file="$(find arm_move)/config/waypoints.yaml" ns="$(arg robot_model)"/>
   
+  <!--start mover node-->
   <node name="mover" pkg="arm_move" type="mover" ns="$(arg robot_model)" output="screen">
     <remap from="/attach_collision_object" to="/px100/attach_collision_object"/>
     <remap from="/collision_object" to="/px100/collision_object"/>
   </node>
 
+  <!--Below are the various modes the robot can be ran in-->
   <include if="$(arg use_gazebo)" file="$(find interbotix_xsarm_gazebo)/launch/xsarm_gazebo.launch">
     <arg name="robot_model"                       value="$(arg robot_model)"/>
     <arg name="robot_name"                        value="$(arg robot_name)"/>
