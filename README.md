@@ -1,4 +1,6 @@
 # Homework 3
 ## By Ryan King-Shepard
 
-This is the README for Homework 3. Clearly it needs some work. 
+This homework consisted of creating two packages: 
+1. The [diff_drive](diff_drive/README.md) package for demonstrating madbot's reckless flips in gazebo
+2. The arm_move package for demonstrating trajectory planning with the PX100 in simulation and reality. 
